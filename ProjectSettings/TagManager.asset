@@ -11,6 +11,9 @@ TagManager:
   - Enemy
   - Enemy1_Attack
   - Player_Attack
+  - Wall
+  - Ceiling
+  - Boulder
   layers:
   - Default
   - TransparentFX

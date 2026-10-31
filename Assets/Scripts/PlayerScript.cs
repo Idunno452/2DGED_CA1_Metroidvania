@@ -31,8 +31,14 @@ public class PlayerScript : MonoBehaviour
     private bool attacking = false;
     private bool attacking2 = false;
     private float attackCooldown = 0;
+    private double heldTime = 0;
+    public bool chargeLvl2 = false;
+    public bool chargeLvl3 = false;
+    public InputAction attackAction;
+    private bool helded = false;
+    private bool unhelded = false;
     [SerializeField] private GameObject projectile;
-    //[SerializeField] private GameManager gm;
+    [SerializeField] private GameManager gm;
     //[SerializeField] private AudioClip throwSound;
     //[SerializeField] private AudioClip collectSound;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -55,11 +61,33 @@ public class PlayerScript : MonoBehaviour
             grounded = false;
             jump++;
         }
-        if (InputSystem.actions["Attack"].IsPressed() && !attacking)
+        
+        if(InputSystem.actions["Attack"].IsPressed() && !swordCharge)
         {
-            InputSystem.actions["Attack"].Reset();
             Attack();
         }
+        
+        if(helded && swordCharge)
+        {
+            heldTime += Time.deltaTime;
+            if(heldTime > 0.5 && heldTime < 1)
+            {
+                chargeLvl2 = true;
+                animator.SetBool("Charge2",true);
+            }
+            else if(heldTime > 1)
+            {
+                chargeLvl3 = true;
+                animator.SetBool("Charge3",true);
+            }
+        }
+        if(unhelded && swordCharge)
+        {
+            unhelded = false;
+            heldTime = 0;
+            Attack();
+        }
+        
         move = InputSystem.actions["Move"].ReadValue<Vector2>();
         if(move.x != 0)
         {
@@ -91,10 +119,43 @@ public class PlayerScript : MonoBehaviour
                 invincibleCount = 0; 
             }
         }
-        if(attacking)
+        
+        if(chargeLvl3 && attacking)
+        {
+            attackCooldown += Time.deltaTime;
+            if(attackCooldown > 0.4)
+            {
+                animator.SetBool("Charge3",false);
+                animator.SetBool("Charge2",false);
+                animator.SetBool("Attacking",false);
+            }
+            if(attackCooldown > 1.2)
+            {
+                chargeLvl3 = false;
+                chargeLvl2 = false;
+                attacking = false;
+                attackCooldown = 0;
+            }
+        }
+        else if(chargeLvl2 && attacking)
+        {
+            attackCooldown += Time.deltaTime;
+            if(attackCooldown > 0.4)
+            {
+                animator.SetBool("Charge2",false);
+                animator.SetBool("Attacking",false);
+            }
+            if(attackCooldown > 1.2)
+            {
+                chargeLvl2 = false;
+                attacking = false;
+                attackCooldown = 0;
+            }
+        }
+        else if(attacking)
         {   
             attackCooldown += Time.deltaTime;
-            if(attackCooldown > 0.25 && !attacking2)
+            if(attackCooldown > 0.4 && !attacking2)
             {
                 if(InputSystem.actions["Attack"].IsPressed() && !attacking2)
                 {
@@ -107,7 +168,7 @@ public class PlayerScript : MonoBehaviour
                     attackCooldown = 0;
                 }
             }
-            if(attackCooldown > 0.8)
+            if(attackCooldown > 0.95)
             {
                 animator.SetBool("Attacking",false);
                 animator.SetBool("Attacking2",false);
@@ -141,11 +202,35 @@ public class PlayerScript : MonoBehaviour
     }
     private void Attack()
     {
-        animator.SetBool("Attacking",true);
-        attacking = true;
-        GameObject go = Instantiate(projectile, rb.transform.position, Quaternion.identity);
-        PlayerAttack pro = go.GetComponent<PlayerAttack>();
-        pro.Launch(new Vector2(direction, 1), 0);
+        if(chargeLvl3)
+        {
+            animator.SetBool("Charge3",true);
+            animator.SetBool("Attacking",true);
+            animator.SetBool("Charging",false);
+            attacking = true;
+            GameObject go = Instantiate(projectile, rb.transform.position, Quaternion.identity);
+            PlayerAttack pro = go.GetComponent<PlayerAttack>();
+            pro.Launch(new Vector2(direction, 1), 0);
+        }
+        else if(chargeLvl2)
+        {
+            animator.SetBool("Charge2",true);
+            animator.SetBool("Attacking",true);
+            animator.SetBool("Charging",false);
+            attacking = true;
+            GameObject go = Instantiate(projectile, rb.transform.position, Quaternion.identity);
+            PlayerAttack pro = go.GetComponent<PlayerAttack>();
+            pro.Launch(new Vector2(direction, 1), 0);
+        }
+        else
+        {
+            animator.SetBool("Attacking",true);
+            animator.SetBool("Charging",false);
+            attacking = true;
+            GameObject go = Instantiate(projectile, rb.transform.position, Quaternion.identity);
+            PlayerAttack pro = go.GetComponent<PlayerAttack>();
+            pro.Launch(new Vector2(direction, 1), 0);
+        }
     }
     private void Attack2()
     {
@@ -166,6 +251,15 @@ public class PlayerScript : MonoBehaviour
             jump = 0;
             jumpApex=false;
         }
+        if(collision.gameObject.tag == "Wall" && wallJump)
+        {
+            isJumping = false;
+            animator.SetBool("Jump",false);
+            isFalling = false;
+            animator.SetBool("Fall",false);
+            jump = 0;
+            jumpApex=false;
+        }
 
         if((collision.gameObject.tag == "Enemy" || collision.gameObject.tag == "Enemy1_Attack") && !isInvincible && !attacking)
         {
@@ -174,21 +268,59 @@ public class PlayerScript : MonoBehaviour
             grounded = true;
             isInvincible = true;
             animator.SetBool("TakingDamage",true);
-            //gm.updateLives(lives);
+            gm.updateLives(lives);
+            if(lives == 0)
+                {
+                    SceneManager.LoadScene("MenuScene");
+                }
             Vector2 away = collision.transform.position - transform.position;
             away.y = 0f;
             rb.AddForce(away*-1, ForceMode2D.Impulse);
-            
         }
+        
+    }
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if(collision.gameObject.tag == "Boulder" && chargeLvl3 && attacking)
+            {
+                Destroy(collision.gameObject);
+            }
     }
     public void ChargeGain()
     {
         swordCharge = true;
-        jumpHeight = 5.0f;
     }
     public void WallJumpGain()
     {
         wallJump = true;
-        jumpHeight = 10.0f;
+    }
+    private void AttackTime(InputAction.CallbackContext context)
+    {
+        if(context.started && swordCharge)
+        {
+            helded = true;
+            animator.SetBool("Charging",true);
+        }
+        if(context.canceled)
+        {
+            helded = false;
+            unhelded = true;
+        }
+    }
+    private void OnEnable()
+    {   
+        attackAction = InputSystem.actions["Attack"];
+
+        attackAction.started += AttackTime;
+        attackAction.canceled += AttackTime;
+    }
+    private void OnDisable()
+    {
+        if(attackAction != null)
+        {
+            attackAction.started -= AttackTime;
+            attackAction.canceled -= AttackTime;
+        
+        }
     }
 }
