@@ -5,6 +5,7 @@ public class Enemies : MonoBehaviour
     [SerializeField] private float walkTime;
     [SerializeField] private float idleTime;
     [SerializeField] private GameObject projectile;
+    [SerializeField] private AudioClip attackSound;
     private bool attacking = false;
     private float attackCooldown = 0;
     private int direction = 1;
@@ -26,7 +27,7 @@ public class Enemies : MonoBehaviour
     {
        rb = GetComponent<Rigidbody2D>();
        animator = GetComponent<Animator>();
-       //aSource = GetComponent<AudioSource>();
+       aSource = GetComponent<AudioSource>();
        animator.SetInteger("direction", direction);
        animator.SetFloat("move", 0);
     }
@@ -69,14 +70,14 @@ public class Enemies : MonoBehaviour
                 direction *= -1;
                 animator.SetInteger("direction", direction);
                 animator.SetFloat("move", direction);
-                //aSource.Play();
+                aSource.Play();
             }
             else if(isWalking && elapsedTime > walkTime)
             {
                 isWalking = false;
                 elapsedTime = 0;
                 animator.SetFloat("move", 0);
-                //aSource.Pause();
+                aSource.Pause();
             }
             elapsedTime += Time.deltaTime;
         }

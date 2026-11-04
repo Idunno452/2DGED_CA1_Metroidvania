@@ -37,10 +37,11 @@ public class PlayerScript : MonoBehaviour
     public InputAction attackAction;
     private bool helded = false;
     private bool unhelded = false;
+    private bool dead = false;
+    private float deathTime;
     [SerializeField] private GameObject projectile;
     [SerializeField] private GameManager gm;
-    //[SerializeField] private AudioClip throwSound;
-    //[SerializeField] private AudioClip collectSound;
+    [SerializeField] private AudioClip attackSound;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -48,6 +49,7 @@ public class PlayerScript : MonoBehaviour
         animator = GetComponent<Animator>();
         lastPosition = rb.transform.position;
         aSource = GetComponent<AudioSource>();
+        dead = false;
     }
     void Update()
     {
@@ -180,6 +182,24 @@ public class PlayerScript : MonoBehaviour
                 attackCooldown = 0;
             }
         }
+        if(dead)
+        {
+            deathTime += Time.deltaTime;
+            if(deathTime > 1)
+            {
+                SceneManager.LoadScene("MenuScene");
+            }
+        }
+        if(move.x != 0 && !playing && !isJumping)
+        {
+            aSource.Play();
+            playing = true;
+        }
+        if(move.x == 0 && playing || isJumping)
+        {
+            aSource.Pause();
+            playing = false;
+        }
    
         animator.SetFloat("Move", move.x);
         if (takingDamage)
@@ -271,7 +291,8 @@ public class PlayerScript : MonoBehaviour
             gm.updateLives(lives);
             if(lives == 0)
                 {
-                    SceneManager.LoadScene("MenuScene");
+                    animator.SetBool("Death",true);
+                    dead = true;
                 }
             Vector2 away = collision.transform.position - transform.position;
             away.y = 0f;
@@ -323,4 +344,5 @@ public class PlayerScript : MonoBehaviour
         
         }
     }
+    
 }
