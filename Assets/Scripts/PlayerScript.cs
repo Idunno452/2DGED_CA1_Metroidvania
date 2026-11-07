@@ -66,6 +66,7 @@ public class PlayerScript : MonoBehaviour
         
         if(InputSystem.actions["Attack"].IsPressed() && !swordCharge)
         {
+            InputSystem.actions["Attack"].Reset();
             Attack();
         }
         
@@ -224,6 +225,7 @@ public class PlayerScript : MonoBehaviour
     {
         if(chargeLvl3)
         {
+            aSource.PlayOneShot(attackSound);
             animator.SetBool("Charge3",true);
             animator.SetBool("Attacking",true);
             animator.SetBool("Charging",false);
@@ -234,6 +236,7 @@ public class PlayerScript : MonoBehaviour
         }
         else if(chargeLvl2)
         {
+            aSource.PlayOneShot(attackSound);
             animator.SetBool("Charge2",true);
             animator.SetBool("Attacking",true);
             animator.SetBool("Charging",false);
@@ -244,6 +247,7 @@ public class PlayerScript : MonoBehaviour
         }
         else
         {
+            aSource.PlayOneShot(attackSound);
             animator.SetBool("Attacking",true);
             animator.SetBool("Charging",false);
             attacking = true;
@@ -297,6 +301,10 @@ public class PlayerScript : MonoBehaviour
             Vector2 away = collision.transform.position - transform.position;
             away.y = 0f;
             rb.AddForce(away*-1, ForceMode2D.Impulse);
+        }
+        if(collision.gameObject.tag == "End")
+        {
+            SceneManager.LoadScene("EndScene");
         }
         
     }

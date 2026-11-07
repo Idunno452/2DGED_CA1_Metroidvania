@@ -6,6 +6,7 @@ public class Enemies : MonoBehaviour
     [SerializeField] private float idleTime;
     [SerializeField] private GameObject projectile;
     [SerializeField] private AudioClip attackSound;
+    [SerializeField] private float RayCastHeight = 0f;
     private bool attacking = false;
     private float attackCooldown = 0;
     private int direction = 1;
@@ -13,7 +14,7 @@ public class Enemies : MonoBehaviour
     private Rigidbody2D rb;
     private Animator animator;
     private float elapsedTime;
-    private int strength = 3;
+    [SerializeField] private int strength = 3;
     private bool isInvincible;
     private float invincibleCount;
     private bool pause = false;
@@ -35,8 +36,8 @@ public class Enemies : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        RaycastHit2D inRangeForward = Physics2D.Raycast(rb.transform.position, new Vector2(direction, 0), 10f, LayerMask.GetMask("Player"));
-        RaycastHit2D inRangeBackward = Physics2D.Raycast(rb.transform.position, new Vector2(direction*-1, 0), 10f, LayerMask.GetMask("Player"));
+        RaycastHit2D inRangeForward = Physics2D.Raycast(rb.transform.position, new Vector2(direction, RayCastHeight), 10f, LayerMask.GetMask("Player"));
+        RaycastHit2D inRangeBackward = Physics2D.Raycast(rb.transform.position, new Vector2(direction*-1, RayCastHeight), 10f, LayerMask.GetMask("Player"));
         if(inRangeForward.collider != null)
         {
             if(inRangeForward.collider.GetComponent<PlayerScript>() != null && !pause && !dead)
@@ -133,6 +134,7 @@ public class Enemies : MonoBehaviour
         {
             if(hit.collider.GetComponent<PlayerScript>() != null && !attacking && attackCountdown > 1f)
             {
+                aSource.PlayOneShot(attackSound);
                 attack();
                 attackCooldown = 0;
             }
